@@ -79,3 +79,4 @@ def printResults(result_set) =
 
 val r = ResultSet()
 run(r) >> printResults(r)  ; printResults(r)
+
