@@ -67,8 +67,8 @@ def getFollowers(x:xs, out_set) =
 
 def run(out_set) =
   Prompt("Enter query string") > queryString >
-  Println(HTTP("http://candy-corn.cs.utexas.edu:8080?query=" + queryString).get()) >>
-  query(workers, queryString.replace(" ", "+"), out_set)
+  HTTP("http://roadkill.cs.utexas.edu:8080?query=" + queryString.replace(" ", "+")).get() > sqlString >
+  query(workers, sqlString.replace(" ", "+"), out_set)
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -81,5 +81,6 @@ def printResults(result_set) =
 
 val r = ResultSet()
 run(r) >> printResults(r)  ; printResults(r)
+
 
 
