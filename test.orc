@@ -58,6 +58,7 @@ def query(x:xs, q, out_set) =
   )
 
 val workers = ["raisinets", "chastity", "diligence", "patience", "aero"]
+val query_servers = ["candy-corn"]
 
 def getFollowers([], out_set) = signal
 def getFollowers(x:xs, out_set) =
@@ -66,6 +67,7 @@ def getFollowers(x:xs, out_set) =
 
 def run(out_set) =
   Prompt("Enter query string") > queryString >
+  Println(HTTP("http://candy-corn.cs.utexas.edu:8080?query=" + queryString).get()) >>
   query(workers, queryString.replace(" ", "+"), out_set)
 
 def printResults(result_set) =
@@ -79,4 +81,5 @@ def printResults(result_set) =
 
 val r = ResultSet()
 run(r) >> printResults(r)  ; printResults(r)
+
 
