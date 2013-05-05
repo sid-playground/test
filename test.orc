@@ -46,30 +46,45 @@ def class ResultSet() =
     toList() >list> printInternal(list)
 stop
 
-def machineName(x, q) =
-  "http://" + x + ".cs.utexas.edu:8080?query=" + q
+def class QueryManager(workers) =
+  
+  val results = ResultSet()
+  
+  def getResults() = results
+  
+  def queryInternal([], q) = signal
+  def queryInternal(x:xs, q) =
+    (
+      ReadJSON(HTTP(machineName(x, q)).get()) > obj >
+      results.add(obj) ,
+      queryInternal(xs, q)
+    )
 
-def query([], q, out_set) = signal
-def query(x:xs, q, out_set) =
-  (
-    ReadJSON(HTTP(machineName(x, q)).get()) > obj >
-    out_set.add(obj) ,
-    query(xs, q, out_set)
-  )
+  def machineName(x, q) =
+    "http://" + x + ".cs.utexas.edu:8080?query=" + q
 
-val workers = ["raisinets", "chastity", "diligence", "patience", "aero"]
-val query_servers = ["candy-corn"]
+  def query(queryString) =
+    results.clear() >>
+    queryInternal(workers, queryString)
 
+stop
+
+val query_servers = ["candy-corn"]
+
+{-
 def getFollowers([], out_set) = signal
 def getFollowers(x:xs, out_set) =
   val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + x + "' and u.screen_name = f.follower_id"
   query(workers, queryString.replace(" ", "+"), out_set) >> getFollowers(xs, out_set) ; getFollowers(xs, out_set)
+-}
 
-def run(out_set) =
+val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero"])
+
+def run() =
   Prompt("Enter query string") > queryString >
   HTTP("http://roadkill.cs.utexas.edu:8080?query=" + queryString.replace(" ", "+")).get() > sqlString >
-  query(workers, sqlString.replace(" ", "+"), out_set)
-
+  qManager.query(sqlString.replace(" ", "+"))
+{-
 def printResults(result_set) =
   Println(result_set.size()) >>
   result_set.printAll() >>
@@ -78,9 +93,7 @@ def printResults(result_set) =
   getFollowers(usersList, result_set) >>
   Println(result_set.size()) >>
   result_set.screenNames()
-
-val r = ResultSet()
-run(r) >> printResults(r)  ; printResults(r)
-
-
-
+-}
+--val r = ResultSet()
+--val r2 = ResultSet()
+run() >> Println(qManager.getResults().printAll())  ; Println(qManager.getResults().printAll())
