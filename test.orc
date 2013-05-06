@@ -49,11 +49,13 @@ stop
 def class QueryManager(workers) =
   
   val results = ResultSet()
+  val offset = Ref(0)
+  val limit = 1
   
-  def getResults() = results
+  def getResults() = results
   
   def queryInternal([], q) = signal
-  def queryInternal(x:xs, q) =
+  def queryInternal(x:xs, q) =
     (
       ReadJSON(HTTP(machineName(x, q)).get()) > obj >
       results.add(obj) ,
@@ -63,9 +65,12 @@ def class QueryManager(workers) =
   def machineName(x, q) =
     "http://" + x + ".cs.utexas.edu:8080?query=" + q
 
-  def query(queryString) =
+  def query(queryString) =
     results.clear() >>
-    queryInternal(workers, queryString)
+    (queryString + "limit " + offset? + "," + limit).replace("\n", " ").replace(" ", "+") > newQueryString >
+    Println(newQueryString) >>
+    queryInternal(workers, newQueryString) >>
+    offset := offset + limit
 
 stop
 
@@ -84,16 +89,17 @@ def run() =
   Prompt("Enter query string") > queryString >
   HTTP("http://roadkill.cs.utexas.edu:8080?query=" + queryString.replace(" ", "+")).get() > sqlString >
   qManager.query(sqlString.replace(" ", "+"))
-{-
+
 def printResults(result_set) =
   Println(result_set.size()) >>
-  result_set.printAll() >>
-  result_set.screenNames() > usersList >
-  result_set.clear() >>
-  getFollowers(usersList, result_set) >>
-  Println(result_set.size()) >>
-  result_set.screenNames()
--}
+  result_set.printAll() {->>
+  result_set.screenNames() > usersList >
+  result_set.clear() >>
+  getFollowers(usersList, result_set) >>
+  Println(result_set.size()) >>
+  result_set.screenNames()-}
+
 --val r = ResultSet()
 --val r2 = ResultSet()
-run() >> Println(qManager.getResults().printAll())  ; Println(qManager.getResults().printAll())
+run() >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
