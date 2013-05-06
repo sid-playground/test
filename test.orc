@@ -67,10 +67,8 @@ def class QueryManager(workers) =
 
   def query(queryString) =
     results.clear() >>
-    (queryString + "limit " + offset? + "," + limit).replace("\n", " ").replace(" ", "+") > newQueryString >
-    Println(newQueryString) >>
-    queryInternal(workers, newQueryString) >>
-    offset := offset + limit
+    Println(queryString) >>
+    queryInternal(workers, queryString)
 
 stop
 
