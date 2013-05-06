@@ -49,8 +49,8 @@ stop
 def class QueryManager(workers) =
   
   val results = ResultSet()
-  val offset = Ref(0)
-  val limit = 1
+  val offset = Ref(0)
+  val limit = 1
   
   def getResults() = results
   
@@ -67,8 +67,8 @@ def class QueryManager(workers) =
 
   def query(queryString) =
     results.clear() >>
-    (queryString + "limit " + offset? + "," + limit).replace("\n", " ").replace(" ", "+") > newQueryString >
-    Println(newQueryString) >>
+    (queryString + "limit " + offset? + "," + limit).replace("\n", " ").replace(" ", "+") > newQueryString >
+    Println(newQueryString) >>
     queryInternal(workers, newQueryString) >>
     offset := offset + limit
 
@@ -83,7 +83,7 @@ def getFollowers(x:xs, out_set) =
   query(workers, queryString.replace(" ", "+"), out_set) >> getFollowers(xs, out_set) ; getFollowers(xs, out_set)
 -}
 
-val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero"])
+val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
 
 def run() =
   Prompt("Enter query string") > queryString >
@@ -93,13 +93,14 @@ def run() =
 def printResults(result_set) =
   Println(result_set.size()) >>
   result_set.printAll() {->>
-  result_set.screenNames() > usersList >
-  result_set.clear() >>
-  getFollowers(usersList, result_set) >>
-  Println(result_set.size()) >>
-  result_set.screenNames()-}
+  result_set.screenNames() > usersList >
+  result_set.clear() >>
+  getFollowers(usersList, result_set) >>
+  Println(result_set.size()) >>
+  result_set.screenNames()-}
 
 --val r = ResultSet()
 --val r2 = ResultSet()
 run() >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
 
