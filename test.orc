@@ -1,8 +1,8 @@
 import class TreeSet = "java.util.TreeSet"
 
 def class ResultSet() =
-  val results = TreeSet[String]()
-  val sem = Semaphore(1)
+  val results = TreeSet[String]()
+  val sem = Semaphore(1)
   val limit = Ref(10000)
   
   def getLimit() = limit?
@@ -12,34 +12,34 @@ def class ResultSet() =
   def size() = results.size()
   def clear() = results.clear()
   
-  def contains(x) =
-    sem.acquire() >>
-    results.contains(x) > ret >
-    sem.release() >>
-    ret
+  def contains(x) =
+    sem.acquire() >>
+    results.contains(x) > ret >
+    sem.release() >>
+    ret
   
-  def popInternal(itr, true) =
-    itr.next() > top >
-    results.remove(top) >>
+  def popInternal(itr, true) =
+    itr.next() > top >
+    results.remove(top) >>
     top
-  def popInternal(itr, false) =
+  def popInternal(itr, false) =
     signal
   
-  def pop() =
-    sem.acquire() >>
-    results.iterator() > itr >
-    popInternal(itr, itr.hasNext()) >ret>
-    sem.release() >>
+  def pop() =
+    sem.acquire() >>
+    results.iterator() > itr >
+    popInternal(itr, itr.hasNext()) >ret>
+    sem.release() >>
     ret
 
-  def addOne(x) =
-    sem.acquire() >>
-    results.add(WriteJSON(x)) >>
+  def addOne(x) =
+    sem.acquire() >>
+    results.add(WriteJSON(x)) >>
     sem.release()
-  def add([]) = signal
-  def add(x:xs) =
-    (sem.acquire() >>
-    results.add(WriteJSON(x)) >>
+  def add([]) = signal
+  def add(x:xs) =
+    (sem.acquire() >>
+    results.add(WriteJSON(x)) >>
     sem.release()) |
     add(xs)
 
@@ -91,8 +91,8 @@ stop
 def class QueryManager(workers) =
   
   val results = ResultSet()
-  val processedSet = ResultSet()
-  val sem = Semaphore(1)
+  val processedSet = ResultSet()
+  val sem = Semaphore(1)
   
   def getResults() = results
   
@@ -100,9 +100,9 @@ def class QueryManager(workers) =
   
   def queryInternal([], q) = signal
   def queryInternal(x:xs, q) =
-    ReadJSON(HTTP(machineName(x, q)).get()) > obj >
-    results.add(obj) |
-    queryInternal(xs, q)
+    ReadJSON(HTTP(machineName(x, q)).get()) > obj >
+    results.add(obj) |
+    queryInternal(xs, q)
 
   def machineName(x, q) =
     "http://" + x + ".cs.utexas.edu:8080?query=" + q
@@ -112,22 +112,22 @@ def class QueryManager(workers) =
     Println(queryString) >>
     queryInternal(workers, queryString)
 
-  def print(signal) = signal
-  def print(x) =
-    --Println("trying " + x) >>
-    processedSet.size() > oldSize >
-    --Println("oldSize = " + oldSize) >>
+  def print(signal) = signal
+  def print(x) =
+    --Println("trying " + x) >>
+    processedSet.size() > oldSize >
+    --Println("oldSize = " + oldSize) >>
     processedSet.addOne(x) >>
-    processedSet.size() > newSize >
-    --Println("newSize = " + newSize) >>
-    Ift(newSize /= oldSize && newSize <= results.getLimit()) >> Println(x) ; signal
+    processedSet.size() > newSize >
+    --Println("newSize = " + newSize) >>
+    Ift(newSize /= oldSize && newSize <= results.getLimit()) >> Println(x) ; signal
 
   def display() =
-    --Rwait(10) >>
-    results.pop() > ret >
-    print(ret) >> 
-    display()
-    --Ift(ret /= signal) >> Println(ret) >> display(); display()
+    --Rwait(10) >>
+    results.pop() > ret >
+    print(ret) >> 
+    display()
+    --Ift(ret /= signal) >> Println(ret) >> display(); display()
 
 stop
 
@@ -148,7 +148,7 @@ def run() =
   Println("limit = " + sqlParsedJson.limit) >>
   Println("queryString = " + sqlParsedJson.queryString) >>
   qManager.setLimit(sqlParsedJson.limit) >>
-  (qManager.query(sqlParsedJson.queryString.replace(" ", "+")) | qManager.display())
+  (qManager.query(sqlParsedJson.queryString.replace(" ", "+")) | qManager.display())
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -160,4 +160,5 @@ def printResults(result_set) =
   result_set.screenNames()-}
 
 run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
 
