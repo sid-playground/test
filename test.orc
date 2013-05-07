@@ -11,6 +11,29 @@ def class ResultSet() =
   
   def size() = results.size()
   def clear() = results.clear()
+  
+  def popInternal(itr, true) =
+    itr.next() > top >
+    results.remove(top) >>
+    top
+  def popInternal(itr, false) =
+    signal
+  
+  def pop() =
+    sem.acquire() >>
+    results.iterator() > itr >
+    popInternal(itr, itr.hasNext()) >ret>
+    sem.release() >>
+    ret
+
+  def add([]) = signal
+  def add(x:xs) =
+    (sem.acquire() >>
+    results.add(WriteJSON(x)) >>
+    sem.release()) |
+    add(xs)
+
+{-
   def add([]) = stop
   def add(x:xs) = 
     (
@@ -20,6 +43,8 @@ def class ResultSet() =
       ) ,
       (if results.size() <: getLimit() then add(xs) else stop)
     )
+-}
+
   def toListInternal(itr) =
     -- ASSUMPTION: it is assumed that the semaphore is already acquired
     -- at this point.
@@ -65,7 +90,7 @@ def class QueryManager(workers) =
   def queryInternal(x:xs, q) =
     (
       ReadJSON(HTTP(machineName(x, q)).get()) > obj >
-      results.add(obj) ,
+      results.add(obj) |
       queryInternal(xs, q)
     )
 
@@ -76,6 +101,11 @@ def class QueryManager(workers) =
     results.clear() >>
     Println(queryString) >>
     queryInternal(workers, queryString)
+
+  def display() =
+    Rwait(10) >>
+    results.pop() > ret >
+    Ift(ret /= signal) >> Println(ret) >> display(); display()
 
 stop
 
@@ -96,7 +126,7 @@ def run() =
   Println("limit = " + sqlParsedJson.limit) >>
   Println("queryString = " + sqlParsedJson.queryString) >>
   qManager.setLimit(sqlParsedJson.limit) >>
-  qManager.query(sqlParsedJson.queryString.replace(" ", "+"))
+  (qManager.query(sqlParsedJson.queryString.replace(" ", "+")) | qManager.display())
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -107,9 +137,8 @@ def printResults(result_set) =
   Println(result_set.size()) >>
   result_set.screenNames()-}
 
---val r = ResultSet()
---val r2 = ResultSet()
-run() >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
 
 
 
