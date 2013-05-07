@@ -3,21 +3,22 @@ import class TreeSet = "java.util.TreeSet"
 def class ResultSet() =
   val results = TreeSet[String]()
   val sem = Semaphore(1)
-  val limit = Ref(10000)
+  val limit = Ref(10000)
   
-  def getLimit() = limit?
-  def setLimit(x) = limit := x
+  def getLimit() = limit?
+  def setLimit(-1) = signal
+  def setLimit(x) = limit := x
   
   def size() = results.size()
   def clear() = results.clear()
-  def add([]) = stop
+  def add([]) = stop
   def add(x:xs) = 
     (
       (sem.acquire() >>
-       (if results.size() <: getLimit() then results.add(WriteJSON(x)) else sem.release() >> stop) >>
+       (if results.size() <: getLimit() then results.add(WriteJSON(x)) else sem.release() >> stop) >>
        sem.release()
-      ) ,
-      add(xs)
+      ) ,
+      add(xs)
     )
   def toListInternal(itr) =
     -- ASSUMPTION: it is assumed that the semaphore is already acquired
@@ -60,7 +61,7 @@ def class QueryManager(workers) =
   
   def getResults() = results
   
-  def setLimit(x) = results.setLimit(x)
+  def setLimit(x) = results.setLimit(x)
   
   def queryInternal([], q) = signal
   def queryInternal(x:xs, q) =
@@ -96,8 +97,8 @@ def run() =
   ReadJSON(sqlJSON) > sqlParsedJson >
   Println("limit = " + sqlParsedJson.limit) >>
   Println("queryString = " + sqlParsedJson.queryString) >>
-  qManager.setLimit(sqlParsedJson.limit) >>
-  qManager.query(sqlParsedJson.queryString.replace(" ", "+"))
+  qManager.setLimit(sqlParsedJson.limit) >>
+  qManager.query(sqlParsedJson.queryString.replace(" ", "+"))
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -111,4 +112,5 @@ def printResults(result_set) =
 --val r = ResultSet()
 --val r2 = ResultSet()
 run() >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
 
