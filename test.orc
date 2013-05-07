@@ -72,8 +72,6 @@ def class QueryManager(workers) =
 
 stop
 
-val query_servers = ["candy-corn"]
-
 {-
 def getFollowers([], out_set) = signal
 def getFollowers(x:xs, out_set) =
@@ -85,8 +83,12 @@ val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "
 
 def run() =
   Prompt("Enter query string") > queryString >
-  HTTP("http://roadkill.cs.utexas.edu:8080?query=" + queryString.replace(" ", "+")).get() > sqlString >
-  qManager.query(sqlString.replace(" ", "+"))
+  HTTP("http://roadkill.cs.utexas.edu:8080?query=" + queryString.replace(" ", "+")).get() > sqlJSON >
+  Println("sqlJSON = " + sqlJSON) >>
+  ReadJSON(sqlJSON) > sqlParsedJson >
+  Println("limit = " + sqlParsedJson.limit) >>
+  Println("queryString = " + sqlParsedJson.queryString) {->>
+  qManager.query(sqlString.replace(" ", "+"))-}
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -100,5 +102,6 @@ def printResults(result_set) =
 --val r = ResultSet()
 --val r2 = ResultSet()
 run() >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+
 
 
