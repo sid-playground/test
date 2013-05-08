@@ -107,20 +107,32 @@ def class QueryManager(workers) =
   def machineName(x, q) =
     "http://" + x + ".cs.utexas.edu:8080?query=" + q
 
-  def query(queryString) =
+  def query(q) =
     results.clear() >>
+    q.replace(" ", "+") > queryString >
     Println(queryString) >>
     queryInternal(workers, queryString)
 
   def print(signal) = signal
   def print(x) =
-    --Println("trying " + x) >>
     processedSet.size() > oldSize >
-    --Println("oldSize = " + oldSize) >>
     processedSet.addOne(x) >>
     processedSet.size() > newSize >
-    --Println("newSize = " + newSize) >>
     Ift(newSize /= oldSize && newSize <= results.getLimit()) >> Println(x) ; signal
+
+  def getSecondLevelFollowers(username, attribute_selector) =
+    val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id"
+    query(queryString) | getSecondLevelFollowersInternal(attribute_selector)
+  
+  def getSecondLevelResults(username, attribute_selector) =
+    val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id AND " + attribute_selector
+    Println(queryString)
+  
+  def getSecondLevelFollowersInternal(attribute_selector) =
+    Rwait(1000) >> results.pop() > top >
+    ReadJSON(top).screen_name > username >
+    getSecondLevelResults(username, attribute_selector) >>
+    getSecondLevelFollowersInternal(attribute_selector)
 
   def display() =
     --Rwait(10) >>
@@ -159,6 +171,6 @@ def printResults(result_set) =
   Println(result_set.size()) >>
   result_set.screenNames()-}
 
-run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
-
+--run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+qManager.getSecondLevelFollowers("mitsiddharth", " u.location like 'austin' and u.name like '%hemanth%' ")
 
