@@ -36,7 +36,7 @@ def class ResultSet() =
     sem.acquire() >>
     results.add(WriteJSON(x)) >>
     sem.release()
-  def add([]) = signal
+  def add([]) = signal
   def add(x:xs) =
     (sem.acquire() >>
     results.add(WriteJSON(x)) >>
@@ -112,38 +112,38 @@ def class QueryManager(workers) =
   def getFollowers(username) =
     val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id"
     query(queryString)
+    
+  def executeQuery(0, sqlParsedJson) = 
+    query(sqlParsedJson.queryString.replace(" ", "+")) | display()
+
+  def executeQuery(1, sqlParsedJson) = 
+    handleNestedFollowers(sqlParsedJson.root_username, sqlParsedJson.attribute_selector)
 
   def display() =
-    Rwait(100) >>
+    Rwait(10) >>
     results.pop() > ret >
     print(ret) >> 
     display()
-    --Ift(ret /= signal) >> Println(ret) >> display(); display()
 
 stop
 
-{-
-def getFollowers([], out_set) = signal
-def getFollowers(x:xs, out_set) =
-  val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + x + "' and u.screen_name = f.follower_id"
-  query(workers, queryString.replace(" ", "+"), out_set) >> getFollowers(xs, out_set) ; getFollowers(xs, out_set)
--}
-
 def getSecondLevelResults(username, attribute_selector) =
-  val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id AND " + attribute_selector
+  val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id " + attribute_selector
   val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
   qManager.query(queryString) | qManager.display()
 
 def getSecondLevelFollowersInternal(results, attribute_selector) =
-  Rwait(100) >> results.pop() > top >
+  Rwait(500) >> results.pop() > top >
   Iff(top = signal) >> ReadJSON(top).screen_name > username >
-                       getSecondLevelResults(username, attribute_selector) >>
+                       getSecondLevelResults(username, attribute_selector) >>
                        getSecondLevelFollowersInternal(results, attribute_selector) 
   ; getSecondLevelFollowersInternal(results, attribute_selector)
 
 def handleNestedFollowers(username, attribute_selector) =
   val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
   qManager.getFollowers(username) | getSecondLevelFollowersInternal(qManager.getResults(), attribute_selector)
+
+
 
 def run() =
   val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
@@ -153,8 +153,11 @@ def run() =
   ReadJSON(sqlJSON) > sqlParsedJson >
   Println("limit = " + sqlParsedJson.limit) >>
   Println("queryString = " + sqlParsedJson.queryString) >>
-  qManager.setLimit(sqlParsedJson.limit) >>
-  (qManager.query(sqlParsedJson.queryString.replace(" ", "+")) | qManager.display())
+  Println("attribute_selector = " + sqlParsedJson.attribute_selector) >>
+  Println("root_user = " + sqlParsedJson.root_username) >>
+  qManager.setLimit(sqlParsedJson.limit) >>
+  qManager.executeQuery(sqlParsedJson.nested_followers, sqlParsedJson)
+  --(qManager.query(sqlParsedJson.queryString.replace(" ", "+")) | qManager.display())
 
 def printResults(result_set) =
   Println(result_set.size()) >>
@@ -165,7 +168,6 @@ def printResults(result_set) =
   Println(result_set.size()) >>
   result_set.screenNames()-}
 
---run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
-handleNestedFollowers("jasonbaldridge", " u.location like '%india%' ")
-
+run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
+--handleNestedFollowers("mitsiddharth", " u.location like '%chennai%' ")
 
