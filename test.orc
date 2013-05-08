@@ -120,7 +120,7 @@ def class QueryManager(workers) =
     handleNestedFollowers(sqlParsedJson.root_username, sqlParsedJson.attribute_selector, sqlParsedJson.limit)
 
   def display() =
-    Rwait(10) >>
+    Rwait(100) >>
     results.pop() > ret >
     print(ret) >> 
     display()
@@ -130,19 +130,19 @@ stop
 def getSecondLevelResults(username, attribute_selector, limit) =
   val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id " + attribute_selector
   val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
-  Println("setting limit = " + limit) >> qManager.setLimit(limit) >> (qManager.query(queryString) | qManager.display())
+  Println("setting limit = " + limit) >> qManager.setLimit(limit) >> (qManager.query(queryString) | qManager.display())
 
 def getSecondLevelFollowersInternal(results, attribute_selector, limit) =
   Rwait(500) >> results.pop() > top >
   Iff(top = signal) >> ReadJSON(top).screen_name > username >
                        getSecondLevelResults(username, attribute_selector, limit) >>
-                       getSecondLevelFollowersInternal(results, attribute_selector, limit) 
-  ; getSecondLevelFollowersInternal(results, attribute_selector, limit)
+                       getSecondLevelFollowersInternal(results, attribute_selector, limit) 
+  ; getSecondLevelFollowersInternal(results, attribute_selector, limit)
 
-def handleNestedFollowers(username, attribute_selector, limit) =
+def handleNestedFollowers(username, attribute_selector, limit) =
   val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
-  qManager.setLimit(limit) >>
-  (qManager.getFollowers(username) | getSecondLevelFollowersInternal(qManager.getResults(), attribute_selector, limit))
+  qManager.setLimit(limit) >>
+  (qManager.getFollowers(username) | getSecondLevelFollowersInternal(qManager.getResults(), attribute_selector, limit))
 
 
 
@@ -171,5 +171,6 @@ def printResults(result_set) =
 
 run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
 --handleNestedFollowers("mitsiddharth", " u.location like '%chennai%' ")
+
 
 
