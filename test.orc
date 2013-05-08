@@ -43,17 +43,6 @@ def class ResultSet() =
     sem.release()) |
     add(xs)
 
-{-
-  def add([]) = stop
-  def add(x:xs) = 
-    (
-      (sem.acquire() >>
-       (if results.size() <: getLimit() then results.add(WriteJSON(x)) else sem.release()) >>
-       sem.release()
-      ) ,
-      (if results.size() <: getLimit() then add(xs) else stop)
-    )
--}
 
   def toListInternal(itr) =
     -- ASSUMPTION: it is assumed that the semaphore is already acquired
@@ -110,7 +99,7 @@ def class QueryManager(workers) =
   def query(q) =
     results.clear() >>
     q.replace(" ", "+") > queryString >
-    Println(queryString) >>
+    --Println(queryString) >>
     queryInternal(workers, queryString)
 
   def print(signal) = signal
@@ -125,7 +114,7 @@ def class QueryManager(workers) =
     query(queryString)
 
   def display() =
-    --Rwait(10) >>
+    Rwait(100) >>
     results.pop() > ret >
     print(ret) >> 
     display()
@@ -142,11 +131,11 @@ def getFollowers(x:xs, out_set) =
 
 def getSecondLevelResults(username, attribute_selector) =
   val queryString = "select u.screen_name from Users u, Followers f where f.screen_name = '" + username + "' and u.screen_name = f.follower_id AND " + attribute_selector
-  val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
-  qManager.query(queryString) | qManager.display()
+  val qManager = QueryManager(["raisinets", "chastity", "diligence", "patience", "aero", "airheads", "humility", "twix", "angry-goat", "dots", "dubble-bubble", "candy-corn", "turtles", "adler", "gummi-bears", "fun-dip", "heath", "wrath", "astral-badger", "envy", "gluttony", "greed", "kindness", "hasselblad", "inskeep", "leica"])
+  qManager.query(queryString) | qManager.display()
 
 def getSecondLevelFollowersInternal(results, attribute_selector) =
-  Rwait(1000) >> results.pop() > top >
+  Rwait(100) >> results.pop() > top >
   Iff(top = signal) >> ReadJSON(top).screen_name > username >
                        getSecondLevelResults(username, attribute_selector) >>
                        getSecondLevelFollowersInternal(results, attribute_selector) 
@@ -177,7 +166,6 @@ def printResults(result_set) =
   result_set.screenNames()-}
 
 --run()-- >> printResults(qManager.getResults())  ; printResults(qManager.getResults())
-handleNestedFollowers("mitsiddharth", " u.location like '%chennai%' ")
-
+handleNestedFollowers("jasonbaldridge", " u.location like '%india%' ")
 
 
